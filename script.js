@@ -79,7 +79,9 @@
     const currentNumber = document.getElementById('food-slide-current');
     const slideTrack = carousel.querySelector('.food-carousel-slides');
     const autoplayToggle = carousel.querySelector('.food-autoplay-toggle');
-    const autoplayIcon = autoplayToggle.querySelector('span');
+    const autoplayIcon = autoplayToggle.querySelector('.ui-icon-player');
+    const pauseShape = autoplayIcon.querySelector('.icon-pause');
+    const playShape = autoplayIcon.querySelector('.icon-play');
     const AUTO_INTERVAL = 6000;
     let current = 0;
     let autoAdvance = null;
@@ -117,8 +119,8 @@
       autoplayToggle.setAttribute('aria-label', label);
       autoplayToggle.setAttribute('title', label);
       autoplayToggle.setAttribute('aria-pressed', String(manuallyPaused));
-      autoplayIcon.textContent = manuallyPaused ? '▶' : '❚❚';
-      autoplayIcon.style.letterSpacing = manuallyPaused ? '0' : '-2px';
+      pauseShape.style.display = manuallyPaused ? 'none' : '';
+      playShape.style.display = manuallyPaused ? '' : 'none';
     };
     const navigateManually = index => {
       stopAuto();

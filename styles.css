@@ -454,3 +454,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--coral);outline-offs
   .food-slide,.food-slide-visual img,.gallery-panel,.gallery-panel img,.gallery-panel-overlay,.gallery-panel-vertical{transition:none!important}
   .food-slide-visual img{transform:none!important}
 }
+
+/* V10 - Iconos vectoriales: no dependen de la tipografía emoji del dispositivo. */
+.ui-icon{display:inline-block;vertical-align:-.13em;width:1em;height:1em;flex-shrink:0;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+a .ui-icon{pointer-events:none}
+.hero-actions .ui-icon,.header-order .ui-icon,.mobile-cta .ui-icon,.food-slide-action .ui-icon{width:1.15em;height:1.15em}
+.mobile-cta .ui-icon{vertical-align:-.18em;margin-left:.35em}
+.food-arrow .ui-icon{width:20px;height:20px;vertical-align:middle}
+.food-autoplay-toggle .ui-icon{width:13px;height:13px;vertical-align:middle}
+.gallery-panel-icon .ui-icon{display:block}
+.intro-character .ui-icon-spark{width:1em;height:1em}
+.ticker-track .ui-icon-spark{vertical-align:-.16em}
