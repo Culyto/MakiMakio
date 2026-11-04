@@ -15,6 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="script.js" defer></script>
+  <script src="google-config.js" defer></script>
+  <script src="google-reviews.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -258,11 +260,50 @@
       </div>
     </section>
 
+    <!-- Reseñas: estructura preparada para dos filas animadas.
+         Con API key de Google Maps Platform se cargan reseñas actuales y fotos reales de perfil.
+         Sin API key se conserva una muestra pública estática con el mismo diseño. -->
+    <section class="reviews-section" id="resenas" aria-labelledby="reviews-title">
+      <div class="shell reviews-shell reviews-head reveal">
+        <div class="reviews-head-copy">
+          <p class="section-kicker"><span>✳</span> / LO QUE DICEN DE NOSOTROS</p>
+          <h2 id="reviews-title">HISTORIAS QUE <span>SE COMPARTEN.</span></h2>
+          <p>La experiencia Maki, contada por quienes ya la probaron.</p>
+        </div>
+        <a class="reviews-google-link" href="https://www.google.com/maps/search/?api=1&query=Restaurante%20Maki%20Makio%20sushi%20%26%20wok%20Facatativ%C3%A1&query_place_id=ChIJnZGEmlV9P44RuatYlHqCpno" target="_blank" rel="noopener noreferrer">
+          DEJAR UN COMENTARIO <svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
+      <div class="shell reviews-shell reveal">
+        <div class="reviews-marquee" aria-label="Opiniones de clientes de Maki Makio">
+          <div class="reviews-row reviews-row--slow">
+            <div class="reviews-track" id="reviews-track-top">
+              <div class="reviews-set" id="reviews-set-top"></div>
+              <div class="reviews-set" id="reviews-clone-top" aria-hidden="true" inert></div>
+            </div>
+          </div>
+          <div class="reviews-row reviews-row--fast">
+            <div class="reviews-track" id="reviews-track-bottom">
+              <div class="reviews-set" id="reviews-set-bottom"></div>
+              <div class="reviews-set" id="reviews-clone-bottom" aria-hidden="true" inert></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="contact-section section-pad section-anchor" id="contacto" aria-labelledby="contact-title">
       <div class="shell contact-grid">
         <div class="contact-intro reveal"><p class="section-kicker"><span>04</span> / HABLEMOS</p><h2 id="contact-title" class="display-title">NOS VEMOS<br><span>EN MAKI.</span></h2><p>¿Plan de sushi? ¿Algo para compartir? Escríbenos y haz de cualquier día un buen día.</p><a class="btn btn-dark" href="https://wa.me/573118956027?text=Hola%20Maki%20Makio%2C%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener noreferrer">ESCRÍBENOS POR WHATSAPP <span aria-hidden="true"><svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span></a></div>
+        <div class="contact-map reveal" aria-label="Mapa para encontrar a Maki Makio en Facatativá">
+          <div class="contact-map-label"><span class="contact-map-pin" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg></span><span>ENCUÉNTRANOS AQUÍ</span></div>
+          <div class="contact-map-frame">
+            <iframe id="maki-google-map" title="Mapa de Google de Restaurante Maki Makio, Carrera 13 número 12B-3, Facatativá" src="https://www.google.com/maps?q=Restaurante%20Maki%20Makio%20sushi%20%26%20wok%20Cra.%2013%20%2312B-3%20Facatativ%C3%A1%20Colombia&amp;output=embed" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          </div>
+          <a class="contact-map-open" href="https://www.google.com/maps/search/?api=1&query=Restaurante%20Maki%20Makio%20sushi%20%26%20wok%20Facatativ%C3%A1&query_place_id=ChIJnZGEmlV9P44RuatYlHqCpno" target="_blank" rel="noopener noreferrer">ABRIR EN GOOGLE MAPS <svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+        </div>
         <div class="contact-details reveal">
-          <div class="contact-line"><span>VISÍTANOS</span><div><strong>Facatativá, Cundinamarca</strong><p>Carrera 13 #12B-3</p><a href="https://www.google.com/maps/search/?api=1&amp;query=Cra.+13+%2312B-3+Facatativ%C3%A1" target="_blank" rel="noopener noreferrer">CÓMO LLEGAR <svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></div>
+          <div class="contact-line"><span>VISÍTANOS</span><div><strong>Facatativá, Cundinamarca</strong><p>Carrera 13 #12B-3</p><a href="https://www.google.com/maps/search/?api=1&amp;query=Restaurante%20Maki%20Makio%20sushi%20%26%20wok%20Facatativ%C3%A1&amp;query_place_id=ChIJnZGEmlV9P44RuatYlHqCpno" target="_blank" rel="noopener noreferrer">CÓMO LLEGAR <svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></div>
           <div class="contact-line"><span>HABLEMOS</span><div><strong>+57 311 895 6027</strong><a href="tel:+573118956027">LLAMAR <svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></div>
           <div class="contact-line"><span>HORARIO</span><div><strong>Todos los días</strong><p>12:00 m. — 9:00 p. m.</p></div></div>
           <div class="contact-line"><span>SÍGUENOS</span><div><strong>@makimakiosushiwok</strong><a href="https://www.instagram.com/makimakiosushiwok/" target="_blank" rel="noopener noreferrer">INSTAGRAM <svg class="ui-icon ui-icon-external" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div></div>
