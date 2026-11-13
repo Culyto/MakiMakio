@@ -249,7 +249,7 @@
     }
     note.replaceChildren();
     if (state === 'loaded') {
-      note.append('Reseñas obtenidas directamente de Google Maps');
+      note.append('Reseñas obtenidas directamente de Google Maps ');
     } else if (state === 'empty') {
       note.append('');
     } else if (state === 'error') {
