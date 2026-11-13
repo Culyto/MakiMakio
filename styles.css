@@ -617,3 +617,15 @@ a .ui-icon{pointer-events:none}
     mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%)}
   .reviews-inline-attribution{font-size:.61rem;margin-top:12px}
 }
+
+
+/* v22 — distribución adaptativa según reseñas REALES de Google.
+   Con menos de seis no se fuerzan dos filas con huecos enormes. */
+.reviews-one-row .reviews-row--fast{display:none!important}
+.reviews-one-row .reviews-row--slow{margin-top:0}
+.reviews-one-row .reviews-marquee{min-height:225px}
+.reviews-one-row .reviews-row--slow .review-card{min-height:212px}
+@media(max-width:560px){
+  .reviews-one-row .reviews-marquee{min-height:215px}
+  .reviews-one-row .reviews-row--slow .review-card{min-height:205px}
+}

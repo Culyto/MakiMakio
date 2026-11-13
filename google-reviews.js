@@ -143,8 +143,21 @@
     const filtered = uniqueReviews(allReviews).filter(review =>
       Number.isFinite(review.rating) && review.rating >= 4 && review.rating <= 5
     );
+
+    // Google Places normalmente proporciona hasta cinco reseñas por petición.
+    // Repartir dos o tres opiniones en dos filas crea huecos enormes y da la
+    // impresión de que el carrusel no funciona. Con menos de seis opiniones
+    // usamos UNA fila continua, sin duplicados visibles. Si algún día una API
+    // autorizada entrega seis o más, volvemos automáticamente a las dos filas.
+    const enoughForTwoRows = filtered.length >= 6;
+    section.classList.toggle('reviews-one-row', !enoughForTwoRows);
+    section.classList.toggle('reviews-two-rows', enoughForTwoRows);
     const groups = [[], []];
-    filtered.forEach((review, index) => groups[index % 2].push(review));
+    if (enoughForTwoRows) {
+      filtered.forEach((review, index) => groups[index % 2].push(review));
+    } else {
+      groups[0] = filtered;
+    }
 
     rows.forEach((row, index) => {
       const fragment = document.createDocumentFragment();
@@ -187,14 +200,21 @@
 
       const previousCycle = row.cycle || 0;
       const previousProgress = previousCycle > 0 ? row.offset / previousCycle : null;
-      row.width = row.original.getBoundingClientRect().width;
       const viewport = row.lane.clientWidth;
       const inset = Math.max(22, Math.min(76, viewport * 0.06));
 
-      // No es posible hacer un loop de 1 o 2 reseñas en toda la pantalla
-      // sin volver a mostrar la misma opinión. En esos casos usamos
-      // un desplazamiento de ida y vuelta suave, siempre visible.
-      row.sparse = row.width < viewport - 2 * inset;
+      // Para que el bucle sea continuo sin mostrar la misma tarjeta dos veces
+      // simultáneamente, un grupo completo debe medir MÁS que el viewport.
+      // Tres opiniones llenan una sola fila; no se convierten en tres filas.
+      if (count >= 3) {
+        const minCardWidth = Math.ceil((viewport + 90) / count) - 18;
+        row.lane.style.setProperty('--review-card-min-width', Math.max(0, minCardWidth) + 'px');
+      }
+      row.width = row.original.getBoundingClientRect().width;
+
+      // Con una o dos reseñas se conserva un vaivén suave dentro del ancho
+      // total disponible. La copia técnica NO se muestra en este caso.
+      row.sparse = row.width < viewport + 8;
       row.lane.classList.toggle('reviews-row--sparse', row.sparse);
       row.travel = row.sparse ? Math.max(0, viewport - row.width - 2 * inset) : 0;
       row.inset = inset;
