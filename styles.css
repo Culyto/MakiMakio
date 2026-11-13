@@ -641,3 +641,27 @@ a .ui-icon{pointer-events:none}
 .reviews-two-rows .reviews-marquee{overflow:visible}
 .reviews-two-rows .reviews-row{width:100%}
 .reviews-two-rows .reviews-row--sparse .reviews-track{will-change:transform}
+
+/* v26 — dos filas continuas como el carrusel original.
+   Las copias técnicas solo completan la cinta: mantienen el contenido real de Google. */
+.reviews-section .reviews-shell{width:min(1470px,calc(100% - clamp(32px,5vw,110px)))}
+.reviews-marquee{width:100%;overflow:hidden}
+.reviews-row{width:100%;overflow:hidden;
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 8%,#000 92%,transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0%,#000 8%,#000 92%,transparent 100%)}
+.reviews-row + .reviews-row{margin-top:19px}
+.reviews-row .reviews-track{display:flex;width:max-content;will-change:transform}
+.reviews-row .reviews-set{display:flex;flex-shrink:0}
+.reviews-row .reviews-set[aria-hidden="true"]{display:flex}
+.reviews-row .review-card{width:clamp(290px,23vw,345px);min-height:211px;flex-shrink:0}
+.reviews-two-rows .reviews-marquee{min-height:0}
+@media(max-width:560px){
+  .reviews-section .reviews-shell{width:calc(100% - 24px)}
+  .reviews-row .review-card{width:275px;min-height:207px}
+  .reviews-row{-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%);
+    mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%)}
+}
+@media(prefers-reduced-motion:reduce){
+  .reviews-row .reviews-set[aria-hidden="true"]{display:none}
+  .reviews-row .reviews-track{width:100%;max-width:100%;overflow:auto;transform:none!important}
+}

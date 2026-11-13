@@ -1,4 +1,4 @@
-/* MAKI MAKIO | Google Reviews v25 — SOLO GOOGLE MAPS.
+/* MAKI MAKIO | Google Reviews v26 — SOLO GOOGLE MAPS.
    Requiere Maps JavaScript API + Places API (New) habilitadas.
    Se muestran exclusivamente reseñas actuales obtenidas de Google Places,
    con calificación de 3, 4 o 5 estrellas; no se mezclan otras fuentes.
@@ -144,9 +144,9 @@
       Number.isFinite(review.rating) && review.rating >= 3 && review.rating <= 5
     );
 
-    // Mantener SIEMPRE dos filas cuando hay al menos dos reseñas válidas.
-    // Google Places entrega hasta cinco opiniones: con tres, se reparten 2 + 1.
-    // Ninguna opinión se inserta en ambas filas.
+    // Dos carriles separados: cada opinión real pertenece a una sola fila.
+    // Con pocas opiniones, las copias visuales sirven para mantener el movimiento
+    // continuo, pero NO añaden reseñas nuevas ni procedentes de otras fuentes.
     const groups = [[], []];
     filtered.forEach((review, index) => groups[index % 2].push(review));
     const twoRows = filtered.length >= 2;
@@ -157,90 +157,84 @@
       const fragment = document.createDocumentFragment();
       groups[index].forEach(review => fragment.append(buildCard(review)));
       row.original.replaceChildren(fragment);
-      // La segunda colección es solo una copia visual para el recorrido infinito.
-      // Nunca se asigna una misma reseña a ambas filas.
-      row.clone.replaceChildren(...Array.from(row.original.children).map(card => card.cloneNode(true)));
+      row.clone.replaceChildren();
       row.clone.setAttribute('aria-hidden', 'true');
-      // El usuario puede hacer clic en las tarjetas visibles de cualquiera de las copias.
       row.clone.removeAttribute('inert');
-      row.clone.querySelectorAll('a').forEach(link => { link.tabIndex = -1; });
       row.offset = 0;
       row.width = 0;
-      row.cycle = 0;
       row.velocity = row.baseSpeed;
       row.transition = null;
       row.lane.classList.toggle('reviews-row--empty', !groups[index].length);
+      row.lane.classList.remove('reviews-row--sparse');
     });
 
     updateMeasurements();
     return filtered.length;
   }
 
-  // Adaptación de las filas a la cantidad real de opiniones recibidas.
-  // Si hay suficientes tarjetas, el carrusel recorre un bucle continuo.
-  // Si Google devuelve pocas, las tarjetas se desplazan suavemente dentro
-  // de TODA la fila (sin estrechar el contenedor ni duplicarlas a la vista).
+  // Crear una cinta continua como la del diseño original de Maki Makio.
+  // Cada ciclo contiene exactamente las mismas tarjetas, para que el enlace
+  // entre ciclos sea imperceptible. No existe el vaivén ni el centrado estático.
   function updateMeasurements() {
     rows.forEach(row => {
+      // Antes de redimensionar, retirar SOLO las copias técnicas. Las primeras
+      // N tarjetas son reseñas únicas de Google y permanecen en el original.
+      const originals = Array.from(row.original.children).filter(card => !card.hasAttribute('data-loop-copy'));
+      row.original.replaceChildren(...originals);
+      row.clone.replaceChildren();
       row.lane.style.removeProperty('--review-card-min-width');
       row.lane.style.removeProperty('width');
-      const count = row.original.children.length;
-      if (!count) {
+
+      if (!originals.length) {
         row.width = 0;
-        row.cycle = 0;
         row.track.style.transform = 'none';
         return;
       }
 
-      const previousCycle = row.cycle || 0;
-      const previousProgress = previousCycle > 0 ? row.offset / previousCycle : null;
+      const previousFraction = row.width ? row.offset / row.width : 0;
       const viewport = row.lane.clientWidth;
-      const inset = Math.max(22, Math.min(76, viewport * 0.06));
+      const card = originals[0];
+      const cardWidth = card.getBoundingClientRect().width;
+      const gap = parseFloat(getComputedStyle(row.original).gap) || 18;
+      const uniqueWidth = originals.length * (cardWidth + gap);
 
-      // Para que el bucle sea continuo sin mostrar la misma tarjeta dos veces
-      // simultáneamente, un grupo completo debe medir MÁS que el viewport.
-      // Tres opiniones llenan una sola fila; no se convierten en tres filas.
-      if (count >= 3) {
-        const minCardWidth = Math.ceil((viewport + 90) / count) - 18;
-        row.lane.style.setProperty('--review-card-min-width', Math.max(0, minCardWidth) + 'px');
+      // Una tira necesita medir al menos el ancho visible más una tarjeta
+      // para que haya contenido a ambos lados durante toda la animación.
+      const neededWidth = viewport + cardWidth + gap;
+      const copies = Math.min(16, Math.max(1, Math.ceil(neededWidth / uniqueWidth)));
+      for (let repeat = 1; repeat < copies; repeat++) {
+        originals.forEach(original => {
+          const duplicate = original.cloneNode(true);
+          duplicate.dataset.loopCopy = 'true';
+          duplicate.setAttribute('aria-hidden', 'true');
+          // Los enlaces de las copias deben seguir respondiendo al clic,
+          // pero no aparecer duplicados en la navegación con Tab.
+          duplicate.querySelectorAll('a').forEach(link => { link.tabIndex = -1; });
+          row.original.append(duplicate);
+        });
       }
-      row.width = row.original.getBoundingClientRect().width;
 
-      // Con una o dos reseñas se conserva un vaivén suave dentro del ancho
-      // total disponible. La copia técnica NO se muestra en este caso.
-      row.sparse = row.width < viewport + 8;
-      row.lane.classList.toggle('reviews-row--sparse', row.sparse);
-      // v24: si solo hay 1-2 reseñas, desplazarlas a lo ancho de la fila,
-      // no en un vaivén imperceptible de apenas 140 px alrededor del centro.
-      // El grupo nunca se duplica mientras esté visible: el rebote garantiza
-      // movimiento continuo y preserva todas las opiniones reales sin repetir.
-      const edge = Math.max(8, Math.min(30, viewport * 0.025));
-      const available = Math.max(0, viewport - row.width - 2 * edge);
-      row.travel = row.sparse ? available : 0;
-      row.inset = row.sparse ? edge : inset;
-      row.cycle = row.sparse ? 2 * row.travel : row.width;
-      // Desfasar las filas: la de abajo arranca en otro punto del recorrido.
-      // Esto evita el efecto de ambas filas estáticas o centradas en paralelo.
-      row.offset = previousProgress === null
-        ? (row.sparse ? row.cycle * (row === rows[0] ? 0.10 : 0.60) : 0)
-        : previousProgress * row.cycle;
+      row.clone.replaceChildren(...Array.from(row.original.children).map(card => {
+        const duplicate = card.cloneNode(true);
+        duplicate.dataset.loopCopy = 'true';
+        duplicate.querySelectorAll('a').forEach(link => { link.tabIndex = -1; });
+        return duplicate;
+      }));
+      row.clone.setAttribute('aria-hidden', 'true');
+      row.clone.removeAttribute('inert');
+
+      row.width = row.original.getBoundingClientRect().width;
+      row.offset = ((previousFraction % 1) + 1) % 1 * row.width;
       applyPosition(row);
     });
   }
 
   function applyPosition(row) {
     if (!row.width) return;
-    let x;
-    if (row.sparse) {
-      // Recorrido de ida y vuelta con ease-in-out senoidal: el movimiento
-      // frena antes del borde y retoma la dirección opuesta sin saltos.
-      const progress = row.cycle > 0 ? row.offset % row.cycle : 0;
-      const phase = row.travel > 0 ? progress / row.travel : 0;
-      x = row.inset + row.travel * (1 - Math.cos(Math.PI * phase)) / 2;
-    } else {
-      // Bucle infinito: el segundo grupo continúa al primero sin saltar.
-      x = row.offset - row.width;
-    }
+    // Hacia la derecha: al terminar una tira aparece su continuación idéntica.
+    // La transformación salta de 0 a -width solo cuando ambas son iguales,
+    // por lo que NO hay cortes visibles ni retrocesos.
+    const x = row.offset - row.width;
     row.track.style.transform = `translate3d(${x}px, 0, 0)`;
   }
 
@@ -338,8 +332,8 @@
             row.velocity = row.transition.from + (row.transition.to - row.transition.from) * easeInOut(t);
             if (t >= 1) row.transition = null;
           }
-          if (row.cycle > 0) {
-            row.offset = (row.offset + row.velocity * delta) % row.cycle;
+          if (row.width > 0) {
+            row.offset = (row.offset + row.velocity * delta) % row.width;
           }
           applyPosition(row);
         });
