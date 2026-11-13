@@ -1,7 +1,7 @@
-/* MAKI MAKIO | Google Reviews v21 — SOLO GOOGLE MAPS.
+/* MAKI MAKIO | Google Reviews v25 — SOLO GOOGLE MAPS.
    Requiere Maps JavaScript API + Places API (New) habilitadas.
    Se muestran exclusivamente reseñas actuales obtenidas de Google Places,
-   con calificación de 4 o 5 estrellas; no se mezclan otras fuentes.
+   con calificación de 3, 4 o 5 estrellas; no se mezclan otras fuentes.
    Places API entrega hasta 5 reseñas por consulta, no la colección completa. */
 (() => {
   'use strict';
@@ -138,10 +138,10 @@
   }
 
   // Se muestran exclusivamente reseñas verificadas por la respuesta de
-  // Google Places y que tengan 4 o 5 estrellas.
+  // Google Places y que tengan 3, 4 o 5 estrellas.
   function renderRows(allReviews) {
     const filtered = uniqueReviews(allReviews).filter(review =>
-      Number.isFinite(review.rating) && review.rating >= 4 && review.rating <= 5
+      Number.isFinite(review.rating) && review.rating >= 3 && review.rating <= 5
     );
 
     // Mantener SIEMPRE dos filas cuando hay al menos dos reseñas válidas.
@@ -255,9 +255,9 @@
     }
     note.replaceChildren();
     if (state === 'loaded') {
-      note.append('Reseñas obtenidas directamente de Google Maps (4 y 5 estrellas). Google Places facilita hasta cinco reseñas por consulta. ');
+      note.append('Reseñas obtenidas directamente de Google Maps (3, 4 y 5 estrellas). Google Places facilita hasta cinco reseñas por consulta. ');
     } else if (state === 'empty') {
-      note.append('Google Maps no devolvió reseñas de 4 o 5 estrellas para mostrar en este momento. ');
+      note.append('Google Maps no devolvió reseñas de 3, 4 o 5 estrellas para mostrar en este momento. ');
     } else if (state === 'error') {
       note.append('No se pudieron cargar las reseñas de Google Maps en este momento. ');
     } else if (state === 'not-configured') {
@@ -450,10 +450,10 @@
           rating: review.rating,
           text: review.text
         }));
-      // Usamos todas las opiniones que Google entregue y únicamente 4/5
+      // Usamos todas las opiniones que Google entregue con 3/4/5
       // estrellas; nunca se agregan opiniones de otras fuentes.
       const positiveLive = realReviews.filter(review =>
-        Number.isFinite(review.rating) && review.rating >= 4 && review.rating <= 5
+        Number.isFinite(review.rating) && review.rating >= 3 && review.rating <= 5
       );
       const count = renderRows(positiveLive);
       updateAttribution(count ? 'loaded' : 'empty', place.attributions);
