@@ -588,3 +588,17 @@ a .ui-icon{pointer-events:none}
 .reviews-row{margin-inline:auto;max-width:100%}
 .reviews-row--empty{display:none}
 .reviews-row--empty + .reviews-row{margin-top:0}
+
+/* v19 — ancho real de ambas filas y desplazamiento para pocos resultados.
+   El ancho no vuelve a reducirse según el número de reseñas que da Places. */
+.reviews-marquee{width:100%}
+.reviews-row{width:100%;max-width:100%;margin-inline:0;overflow:hidden;
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%);
+}
+.reviews-row--sparse .reviews-set[aria-hidden="true"]{display:none}
+.reviews-track{width:max-content}
+@media(max-width:560px){
+  .reviews-row{-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%);
+    mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%)}
+}

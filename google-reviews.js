@@ -161,6 +161,8 @@
       row.clone.removeAttribute('inert');
       row.clone.querySelectorAll('a').forEach(link => { link.tabIndex = -1; });
       row.offset = 0;
+      row.width = 0;
+      row.cycle = 0;
       row.velocity = row.baseSpeed;
       row.transition = null;
       row.lane.classList.toggle('reviews-row--empty', !groups[index].length);
@@ -170,36 +172,57 @@
     return filtered.length;
   }
 
+  // Adaptación de las filas a la cantidad real de opiniones recibidas.
+  // Si hay suficientes tarjetas, el carrusel recorre un bucle continuo.
+  // Si Google devuelve pocas, las tarjetas se desplazan suavemente dentro
+  // de TODA la fila (sin estrechar el contenedor ni duplicarlas a la vista).
   function updateMeasurements() {
-    const populatedRows = rows.filter(row => row.original.children.length);
-    if (!populatedRows.length) return;
-
-    // Un conjunto debe ser más ancho que el área visible para impedir
-    // huecos en el bucle y evitar dos ejemplares simultáneos de la misma reseña.
     rows.forEach(row => {
       row.lane.style.removeProperty('--review-card-min-width');
-      row.lane.style.width = '';
-    });
-    const widths = populatedRows.map(row => row.original.getBoundingClientRect().width);
-    const sharedViewport = Math.min(
-      populatedRows[0].lane.parentElement.clientWidth,
-      Math.min(...widths) - 28
-    );
-    const viewportWidth = Math.max(1, sharedViewport);
-
-    rows.forEach(row => {
-      if (!row.original.children.length) {
+      row.lane.style.removeProperty('width');
+      const count = row.original.children.length;
+      if (!count) {
         row.width = 0;
+        row.cycle = 0;
         row.track.style.transform = 'none';
         return;
       }
-      const previousWidth = row.width || 0;
-      const previousFraction = previousWidth > 0 ? row.offset / previousWidth : 0;
+
+      const previousCycle = row.cycle || 0;
+      const previousProgress = previousCycle > 0 ? row.offset / previousCycle : null;
       row.width = row.original.getBoundingClientRect().width;
-      row.offset = previousFraction * row.width;
-      row.lane.style.width = viewportWidth + 'px';
-      row.track.style.transform = `translate3d(${row.offset - row.width}px, 0, 0)`;
+      const viewport = row.lane.clientWidth;
+      const inset = Math.max(22, Math.min(76, viewport * 0.06));
+
+      // No es posible hacer un loop de 1 o 2 reseñas en toda la pantalla
+      // sin volver a mostrar la misma opinión. En esos casos usamos
+      // un desplazamiento de ida y vuelta suave, siempre visible.
+      row.sparse = row.width < viewport - 2 * inset;
+      row.lane.classList.toggle('reviews-row--sparse', row.sparse);
+      row.travel = row.sparse ? Math.max(0, viewport - row.width - 2 * inset) : 0;
+      row.inset = inset;
+      row.cycle = row.sparse ? 2 * row.travel : row.width;
+      row.offset = previousProgress === null
+        ? (row.sparse ? row.travel / 2 : 0)
+        : previousProgress * row.cycle;
+      applyPosition(row);
     });
+  }
+
+  function applyPosition(row) {
+    if (!row.width) return;
+    let x;
+    if (row.sparse) {
+      // Recorrido de ida y vuelta con ease-in-out senoidal: el movimiento
+      // frena antes del borde y retoma la dirección opuesta sin saltos.
+      const progress = row.cycle > 0 ? row.offset % row.cycle : 0;
+      const phase = row.travel > 0 ? progress / row.travel : 0;
+      x = row.inset + row.travel * (1 - Math.cos(Math.PI * phase)) / 2;
+    } else {
+      // Bucle infinito: el segundo grupo continúa al primero sin saltar.
+      x = row.offset - row.width;
+    }
+    row.track.style.transform = `translate3d(${x}px, 0, 0)`;
   }
 
   function updateAttribution(live = false, placeAttributions = []) {
@@ -292,8 +315,10 @@
             row.velocity = row.transition.from + (row.transition.to - row.transition.from) * easeInOut(t);
             if (t >= 1) row.transition = null;
           }
-          row.offset = (row.offset + row.velocity * delta) % row.width;
-          row.track.style.transform = `translate3d(${row.offset - row.width}px, 0, 0)`;
+          if (row.cycle > 0) {
+            row.offset = (row.offset + row.velocity * delta) % row.cycle;
+          }
+          applyPosition(row);
         });
       }
       requestAnimationFrame(tick);
