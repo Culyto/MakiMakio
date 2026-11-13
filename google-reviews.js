@@ -1,8 +1,9 @@
-/* MAKI MAKIO | Google Reviews v18.
-   Dos filas independientes, enlaces a las opiniones y desplazamiento fluido.
-   Solo muestra reseñas de 4 o 5 estrellas, sin tarjetas promocionales.
-   Places API expone hasta 5 reseñas por consulta; para obtener todas las
-   reseñas del negocio se requiere Business Profile API con permiso del dueño. */
+/* MAKI MAKIO | Google Reviews v20.
+   Dos filas fluidas: combina reseñas actuales de Google Places (hasta cinco)
+   con extractos públicos históricos documentados para evitar huecos.
+   No inventa testimonios ni fotos; deduplica autores y solo muestra 4/5 estrellas.
+   Para consultar todas las reseñas, se requiere autorización del negocio
+   mediante Google Business Profile API. */
 (() => {
   'use strict';
 
@@ -41,6 +42,11 @@
     { author: 'Alejandra P', date: '13 NOV 2025', text: 'Una comida muy deliciosa y el servicio rápido, muy gentiles', rating: 5 },
     { author: 'Alexandra L', date: '12 SEP 2021', text: 'Super', rating: 5 }
   ];
+  const archivedReviews = fallbackReviews.map(review => ({
+    ...review,
+    sourceType: 'archive',
+    reviewUrl: sourceUrl
+  }));
   const validGoogleLink = value => typeof value === 'string' && /^https:\/\/(?:www\.)?(?:google\.[^/]+|maps\.google\.[^/]+|goo\.gl|maps\.app\.goo\.gl)(?:\/|$)/i.test(value);
   const starSVG = '<svg class="review-star-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m10 1.4 2.66 5.4 5.96.87-4.31 4.2 1.02 5.93L10 15l-5.33 2.8 1.02-5.93-4.31-4.2 5.96-.87Z" fill="currentColor"/></svg>';
 
@@ -111,7 +117,9 @@
     item.append(quote);
     const foot = document.createElement('span');
     foot.className = 'review-card-bottom';
-    foot.textContent = 'RESEÑA PUBLICADA EN GOOGLE';
+    foot.textContent = review.sourceType === 'archive'
+      ? 'EXTRACTO PÚBLICO · ARCHIVO'
+      : 'RESEÑA DE GOOGLE MAPS';
     item.append(foot);
 
     // El enlace directo viene de Review.googleMapsURI (si está disponible).
@@ -119,13 +127,18 @@
     const individualUrl = validGoogleLink(review.reviewUrl) ? review.reviewUrl : null;
     const open = document.createElement('a');
     open.className = 'review-card-open';
-    open.href = individualUrl || placesUrl;
+    const archived = review.sourceType === 'archive';
+    open.href = individualUrl || (archived ? sourceUrl : placesUrl);
     open.target = '_blank';
     open.rel = 'noopener noreferrer';
     open.setAttribute('aria-label', individualUrl
       ? 'Leer la reseña de ' + safe(review.author) + ' en Google Maps'
-      : 'Ver las reseñas de Maki Makio en Google Maps');
-    open.title = individualUrl ? 'Abrir esta reseña en Google Maps' : 'Ver reseñas en Google Maps';
+      : archived
+        ? 'Ver la fuente pública de la reseña de ' + safe(review.author)
+        : 'Ver las reseñas de Maki Makio en Google Maps');
+    open.title = individualUrl
+      ? 'Abrir esta reseña en Google Maps'
+      : archived ? 'Consultar la fuente pública' : 'Ver reseñas en Google Maps';
     item.append(open);
     return item;
   }
@@ -133,8 +146,11 @@
   function uniqueReviews(reviews) {
     const seen = new Set();
     return reviews.filter(review => {
-      const key = (safe(review.author) + '|' + safe(review.text)).toLocaleLowerCase('es');
-      if (!review.text || seen.has(key)) return false;
+      // Priorizamos la reseña actual sobre el extracto histórico del mismo autor.
+      const author = safe(review.author).toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const content = safe(review.text).toLocaleLowerCase('es');
+      const key = author && author !== 'cliente' ? 'autor:' + author : 'texto:' + content;
+      if (!content || seen.has(key)) return false;
       seen.add(key);
       return true;
     });
@@ -226,33 +242,36 @@
   }
 
   function updateAttribution(live = false, placeAttributions = []) {
-    const note = document.querySelector('.reviews-attribution');
-    if (!note) return;
+    let note = document.querySelector('.reviews-attribution');
+    if (!note) {
+      const container = section.querySelector('.reviews-marquee')?.parentElement;
+      if (!container) return;
+      note = document.createElement('p');
+      note.className = 'reviews-attribution reviews-inline-attribution';
+      container.append(note);
+    }
     note.replaceChildren();
     if (live) {
-      note.append('Opiniones de 4 y 5 estrellas disponibles en la selección de Google Places (máximo 5 por consulta). ');
+      note.append('Opiniones recientes de Google Places y extractos públicos históricos (solo 4 y 5 estrellas). Google Places entrega hasta cinco reseñas por consulta. ');
     } else {
-      note.append('Selección de opiniones públicas de 4 y 5 estrellas; no se actualizan automáticamente sin la conexión a Google. ');
-      const source = document.createElement('a');
-      source.href = sourceUrl;
-      source.target = '_blank';
-      source.rel = 'noopener noreferrer';
-      source.textContent = 'Fuente de las reseñas';
-      note.append(source, '. ');
+      note.append('Selección de extractos públicos históricos de 4 y 5 estrellas. ');
     }
+    const source = document.createElement('a');
+    source.href = sourceUrl;
+    source.target = '_blank';
+    source.rel = 'noopener noreferrer';
+    source.textContent = 'Fuente de los extractos';
+    note.append(source, ' · ');
     const link = document.createElement('a');
     link.href = placesUrl;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.textContent = 'Ver todas en Google Maps';
+    link.textContent = 'Reseñas en Google Maps';
     note.append(link);
-
     if (live && Array.isArray(placeAttributions)) {
       placeAttributions.forEach(attribution => {
         if (typeof attribution === 'string' && attribution.trim()) {
-          const notePart = document.createElement('span');
-          notePart.textContent = ' · ' + attribution;
-          note.append(notePart);
+          note.append(' · ', attribution);
         }
       });
     }
@@ -422,22 +441,22 @@
           photoURI: review.authorAttribution.photoURI || '',
           date: review.relativePublishTimeDescription || 'Reseña de Google',
           rating: review.rating,
-          text: review.text
+          text: review.text,
+          sourceType: 'live'
         }));
-      // Mostrar solo las reseñas recuperadas desde la API, filtradas a 4-5 estrellas.
-      // No mezclar aquí las opiniones anteriores ni generar tarjetas de relleno.
-      renderRows(realReviews);
+      // Reunimos las reseñas actuales positivas con opiniones históricas de
+      // autores distintos. No se presentan como si todas fueran datos en vivo.
+      const positiveLive = realReviews.filter(review =>
+        Number.isFinite(review.rating) && review.rating >= 4 && review.rating <= 5
+      );
+      renderRows([...positiveLive, ...archivedReviews]);
       updateAttribution(true, place.attributions);
-      if (!realReviews.some(review => Number.isFinite(review.rating) && review.rating >= 4)) {
-        const note = document.querySelector('.reviews-attribution');
-        if (note) note.prepend('No hay reseñas de 4 o 5 estrellas en la selección devuelta por Google. ');
-      }
     } catch (error) {
       console.warn('Reseñas Google: se conserva la muestra documentada.', error);
     }
   }
 
-  renderRows(fallbackReviews);
+  renderRows(archivedReviews);
   updateAttribution(false);
   attachEvents();
   loadLiveReviews();

@@ -602,3 +602,18 @@ a .ui-icon{pointer-events:none}
   .reviews-row{-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%);
     mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%)}
 }
+
+/* v20 — carrusel continuo con reseñas actuales e históricas identificadas.
+   El ancho de las tarjetas vuelve a llenar la sección sin un vaivén aislado. */
+.reviews-marquee{padding-bottom:2px}
+.reviews-inline-attribution{margin:17px 0 0;max-width:100%;font-size:.64rem;line-height:1.7;color:#83796f}
+.reviews-inline-attribution a{color:#a63d2b;text-decoration:underline;text-underline-offset:3px}
+.reviews-row{
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 8%,#000 92%,transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0%,#000 8%,#000 92%,transparent 100%);
+}
+@media(max-width:560px){
+  .reviews-row{-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%);
+    mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%)}
+  .reviews-inline-attribution{font-size:.61rem;margin-top:12px}
+}
