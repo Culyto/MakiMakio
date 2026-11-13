@@ -482,7 +482,7 @@ a .ui-icon{pointer-events:none}
 .reviews-google-link:hover{background:var(--ink);color:white}
 .reviews-google-link .ui-icon{width:16px;height:16px}
 .reviews-marquee{position:relative;padding:6px 0 8px}
-.reviews-marquee::before,.reviews-marquee::after{content:"";position:absolute;top:0;bottom:0;width:clamp(40px,7vw,120px);z-index:5;pointer-events:none}
+.reviews-marquee::before,.reviews-marquee::after{display:none!important}
 .reviews-marquee::before{left:0;background:linear-gradient(to right,var(--cream) 0%,rgba(247,243,230,.95) 38%,rgba(247,243,230,0) 100%)}
 .reviews-marquee::after{right:0;background:linear-gradient(to left,var(--cream) 0%,rgba(247,243,230,.95) 38%,rgba(247,243,230,0) 100%)}
 .reviews-row{overflow:hidden}
@@ -490,7 +490,7 @@ a .ui-icon{pointer-events:none}
 .reviews-track{width:max-content;display:flex;align-items:stretch;will-change:transform;transform:translate3d(0,0,0)}
 /* La velocidad de cada fila se anima por JS con easing independiente. */
 .reviews-set{display:flex;gap:18px;padding-right:18px;align-items:stretch}
-.review-card{width:max(var(--review-card-min-width, 0px),clamp(290px, 24vw, 350px));min-height:212px;border-radius:18px;background:#fff;box-shadow:0 12px 36px rgba(19,15,13,.055);padding:22px 22px 20px;flex-shrink:0;display:flex;flex-direction:column;border:1px solid rgba(20,20,20,.055)}
+.review-card{width:max(var(--review-card-min-width, 0px),clamp(335px,30vw,445px));min-height:212px;border-radius:18px;background:#fff;box-shadow:0 12px 36px rgba(19,15,13,.055);padding:22px 22px 20px;flex-shrink:0;display:flex;flex-direction:column;border:1px solid rgba(20,20,20,.055)}
 .review-card-top{display:flex;align-items:flex-start;gap:11px;min-width:0}
 .review-avatar,.review-avatar-img{width:44px;height:44px;flex:none;border-radius:50%;display:grid;place-items:center;background:#f4d4c8;color:#a23121;font-size:.9rem;font-weight:800;object-fit:cover;overflow:hidden}
 .review-author{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
@@ -568,21 +568,24 @@ a .ui-icon{pointer-events:none}
 /* Refinamiento de legibilidad de la información de contacto */
 .contact-section .contact-line a{display:table;width:max-content;max-width:100%;margin-top:11px}
 .contact-section .contact-line>div{min-width:0}
-/* Espacio entre reseñas y contacto */
-.reviews-section {
-    padding-bottom: 100px;
+
+/* v17 — borde difuminado sin cortes y tarjetas clicables */
+.reviews-row{
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 11%,#000 89%,transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0%,#000 11%,#000 89%,transparent 100%);
 }
-
-.contact-section {
-    padding-top: 80px;
-}
-
-@media (max-width: 560px) {
-    .reviews-section {
-        padding-bottom: 25px;
-    }
-
-    .contact-section {
-        padding-top: 45px;
-    }
+.review-card{position:relative;cursor:pointer;transition:box-shadow .25s ease,background .25s ease}
+.review-card:hover{box-shadow:0 14px 36px rgba(19,15,13,.13)}
+.review-card-open{position:absolute;inset:0;z-index:1;display:block;border-radius:inherit}
+.review-card-open:focus-visible{outline:3px solid var(--coral);outline-offset:-4px}
+.review-card .review-author a{position:relative;z-index:2}
+.review-card:not(.review-card--more):hover .review-card-bottom{text-decoration:underline;text-underline-offset:3px}
+.review-card--more{background:var(--coral);color:#111;border-color:transparent;justify-content:space-between}
+.reviews-more-kicker{font-weight:800;font-size:.59rem;letter-spacing:.13em}
+.reviews-more-title{font-size:1.75rem;line-height:1.05;letter-spacing:-.055em;font-weight:900;max-width:285px;margin:14px 0 0}
+.review-card--more p{font-size:.77rem;line-height:1.5;margin:10px 0 auto;color:#33231d;max-width:330px}
+.reviews-more-action{font-size:.6rem;letter-spacing:.08em;font-weight:900;margin-top:14px}
+@media(max-width:560px){
+  .reviews-row{-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 9%,#000 91%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,#000 9%,#000 91%,transparent 100%)}
+  .reviews-more-title{font-size:1.38rem}
 }

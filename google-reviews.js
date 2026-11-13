@@ -1,6 +1,7 @@
-/* MAKI MAKIO | Reseñas en dos filas, sin repetir reseñas entre filas.
-   Temporalmente usa extractos públicos documentados, sin Google Cloud.
-   API Places opcional futura: conserva el mismo carrusel y admite fotos auténticas. */
+/* MAKI MAKIO | Google Reviews.
+   Dos filas independientes, enlaces a las reseñas y bucle continuo.
+   Places API devuelve hasta 5 reseñas: el resto se abre en Google Maps.
+   Mantener las restricciones de API y referer en Google Cloud. */
 (() => {
   'use strict';
 
@@ -40,6 +41,7 @@
     { author: 'Alexandra L', date: '12 SEP 2021', text: 'Super', rating: 5 },
     { author: 'David P', date: 'Reseña pública', text: 'Un muy agradable lugar con excelente atención', rating: null }
   ];
+  const validGoogleLink = value => typeof value === 'string' && /^https:\/\/(?:www\.)?(?:google\.[^/]+|maps\.google\.[^/]+|goo\.gl|maps\.app\.goo\.gl)(?:\/|$)/i.test(value);
   const starSVG = '<svg class="review-star-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m10 1.4 2.66 5.4 5.96.87-4.31 4.2 1.02 5.93L10 15l-5.33 2.8 1.02-5.93-4.31-4.2 5.96-.87Z" fill="currentColor"/></svg>';
 
   function makeAvatar(review) {
@@ -111,6 +113,20 @@
     foot.className = 'review-card-bottom';
     foot.textContent = 'RESEÑA PUBLICADA EN GOOGLE';
     item.append(foot);
+
+    // El enlace directo viene de Review.googleMapsURI (si está disponible).
+    // Si la API no facilita uno, se abre la página de reseñas del restaurante.
+    const individualUrl = validGoogleLink(review.reviewUrl) ? review.reviewUrl : null;
+    const open = document.createElement('a');
+    open.className = 'review-card-open';
+    open.href = individualUrl || placesUrl;
+    open.target = '_blank';
+    open.rel = 'noopener noreferrer';
+    open.setAttribute('aria-label', individualUrl
+      ? 'Leer la reseña de ' + safe(review.author) + ' en Google Maps'
+      : 'Ver las reseñas de Maki Makio en Google Maps');
+    open.title = individualUrl ? 'Abrir esta reseña en Google Maps' : 'Ver reseñas en Google Maps';
+    item.append(open);
     return item;
   }
 
@@ -124,19 +140,62 @@
     });
   }
 
-  function renderRows(allReviews) {
+  function buildMoreCard(type = 'all', count = 0) {
+    const item = document.createElement('article');
+    item.className = 'review-card review-card--more';
+    const eyebrow = document.createElement('span');
+    eyebrow.className = 'reviews-more-kicker';
+    eyebrow.textContent = 'MAKI MAKIO · GOOGLE MAPS';
+    const title = document.createElement('strong');
+    title.className = 'reviews-more-title';
+    title.textContent = type === 'write' ? 'TU OPINIÓN CUENTA.' : 'HAY MÁS HISTORIAS.';
+    const desc = document.createElement('p');
+    desc.textContent = type === 'write'
+      ? '¿Ya nos visitaste? Comparte tu experiencia en Google.'
+      : count > 5 ? 'Descubre todas las opiniones de nuestra comunidad directamente en Google Maps.'
+        : 'Descubre más experiencias y comentarios de nuestros clientes.';
+    const label = document.createElement('span');
+    label.className = 'reviews-more-action';
+    label.textContent = type === 'write' ? 'ESCRIBIR UNA RESEÑA ↗' : 'VER TODAS LAS RESEÑAS ↗';
+    const anchor = document.createElement('a');
+    anchor.className = 'review-card-open';
+    anchor.href = placesUrl;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.setAttribute('aria-label', type === 'write' ? 'Ir a Google Maps para opinar de Maki Makio' : 'Ver todas las reseñas de Maki Makio en Google Maps');
+    item.append(eyebrow, title, desc, label, anchor);
+    return item;
+  }
+
+  function renderRows(allReviews, ratingCount = 0) {
     const unique = uniqueReviews(allReviews);
-    // Alternar las opiniones: filas disjuntas, sin reutilizar el mismo autor/texto.
+    // Una opinión pertenece a UNA sola fila. Nunca se mezcla con la otra.
     const groups = [[], []];
     unique.forEach((review, index) => groups[index % 2].push(review));
+
     rows.forEach((row, index) => {
       const fragment = document.createDocumentFragment();
       groups[index].forEach(review => fragment.append(buildCard(review)));
+      // Google solo expone 5 reseñas: esta tarjeta enlaza al historial completo.
+      // También completa el recorrido cuando una fila tiene menos opiniones.
+      if (index === 1 || groups[index].length < 3) {
+        fragment.append(buildMoreCard(index === 0 && groups[index].length < 3 ? 'write' : 'all', ratingCount));
+      }
       row.original.replaceChildren(fragment);
-      // Sólo la copia visual necesaria para que el bucle no tenga cortes.
+      // Mantener cada vuelta más ancha que el área visible, incluso si el
+      // diseñador reduce el ancho de las tarjetas en CSS. Rellenamos con CTA,
+      // nunca con reseñas repetidas ni con tarjetas exageradamente anchas.
+      let filler = 0;
+      while (row.original.getBoundingClientRect().width < row.lane.clientWidth + 24 && filler < 8) {
+        row.original.append(buildMoreCard(filler % 2 ? 'all' : 'write', ratingCount));
+        filler++;
+      }
       row.clone.replaceChildren(...Array.from(row.original.children).map(card => card.cloneNode(true)));
       row.clone.setAttribute('aria-hidden', 'true');
-      row.clone.inert = true;
+      // Los clones son visibles durante el bucle: NO deben ser inert, o los
+      // clicks no funcionarían en la mayor parte de las tarjetas del carrusel.
+      row.clone.removeAttribute('inert');
+      row.clone.querySelectorAll('a').forEach(link => { link.tabIndex = -1; });
       row.offset = 0;
       row.velocity = row.baseSpeed;
       row.transition = null;
@@ -146,19 +205,13 @@
 
   function updateMeasurements() {
     rows.forEach(row => {
-      const count = row.original.children.length;
-      if (!count) return;
-      // Cada serie ocupa al menos el ancho del contenedor; nunca se ven dos
-      // ejemplares de la misma reseña al mismo tiempo.
+      if (!row.original.children.length) return;
+      // No agrandamos las opiniones a 600px cuando hay solo dos en la fila.
       row.lane.style.removeProperty('--review-card-min-width');
-      if (count < 3) {
-        const minWidth = Math.ceil((row.lane.clientWidth + 40) / count) - 18;
-        row.lane.style.setProperty('--review-card-min-width', Math.max(335, minWidth) + 'px');
-      }
-      const previousWidth = row.width || 0;
-      const previousFraction = previousWidth > 0 ? row.offset / previousWidth : 0;
+      const oldWidth = row.width || 0;
+      const oldFraction = oldWidth ? row.offset / oldWidth : 0;
       row.width = row.original.getBoundingClientRect().width;
-      row.offset = previousFraction * row.width;
+      row.offset = oldFraction * row.width;
       row.track.style.transform = `translate3d(${row.offset - row.width}px, 0, 0)`;
     });
   }
@@ -168,9 +221,9 @@
     if (!note) return;
     note.replaceChildren();
     if (live) {
-      note.append('Opiniones obtenidas desde Google Maps al abrir la página. ');
+      note.append('Google Places muestra una selección de hasta cinco opiniones, ordenadas por relevancia. ');
     } else {
-      note.append('Selección de reseñas públicas; no se actualizan automáticamente hasta activar Google Places. ');
+      note.append('Selección de opiniones públicas, sin actualización automática. ');
       const source = document.createElement('a');
       source.href = sourceUrl;
       source.target = '_blank';
@@ -354,13 +407,14 @@
         .map(review => ({
           author: review.authorAttribution.displayName || 'Cliente',
           authorUrl: review.authorAttribution.uri || '',
+          reviewUrl: review.googleMapsURI || review.googleMapsUri || '',
           photoURI: review.authorAttribution.photoURI || '',
           date: review.relativePublishTimeDescription || 'Reseña de Google',
           rating: review.rating,
           text: review.text
         }));
       if (realReviews.length >= 2) {
-        renderRows(realReviews);
+        renderRows(realReviews, place.userRatingCount || 0);
         updateAttribution(true, place.attributions);
       }
     } catch (error) {
