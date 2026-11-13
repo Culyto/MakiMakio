@@ -635,3 +635,9 @@ a .ui-icon{pointer-events:none}
 /* La distribución 2+1 ocupa ambas alturas del carrusel sin duplicar opiniones. */
 .reviews-two-rows .reviews-marquee{min-height:450px}
 @media(max-width:560px){.reviews-two-rows .reviews-marquee{min-height:425px}}
+
+/* v24 — filas de ancho completo con movimiento perceptible.
+   El contenido escaso recorre toda la pista, no solo 140px en el centro. */
+.reviews-two-rows .reviews-marquee{overflow:visible}
+.reviews-two-rows .reviews-row{width:100%}
+.reviews-two-rows .reviews-row--sparse .reviews-track{will-change:transform}

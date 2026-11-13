@@ -210,14 +210,19 @@
       // total disponible. La copia técnica NO se muestra en este caso.
       row.sparse = row.width < viewport + 8;
       row.lane.classList.toggle('reviews-row--sparse', row.sparse);
-      // Con solo 1-2 tarjetas, un vaivén corto centrado mantiene ambas filas
-      // visibles y en movimiento, sin estirarlas ni hacerlas desaparecer.
-      const available = Math.max(0, viewport - row.width - 2 * inset);
-      row.travel = row.sparse ? Math.min(available, 140, viewport * 0.12) : 0;
-      row.inset = row.sparse ? Math.max(0, (viewport - row.width - row.travel) / 2) : inset;
+      // v24: si solo hay 1-2 reseñas, desplazarlas a lo ancho de la fila,
+      // no en un vaivén imperceptible de apenas 140 px alrededor del centro.
+      // El grupo nunca se duplica mientras esté visible: el rebote garantiza
+      // movimiento continuo y preserva todas las opiniones reales sin repetir.
+      const edge = Math.max(8, Math.min(30, viewport * 0.025));
+      const available = Math.max(0, viewport - row.width - 2 * edge);
+      row.travel = row.sparse ? available : 0;
+      row.inset = row.sparse ? edge : inset;
       row.cycle = row.sparse ? 2 * row.travel : row.width;
+      // Desfasar las filas: la de abajo arranca en otro punto del recorrido.
+      // Esto evita el efecto de ambas filas estáticas o centradas en paralelo.
       row.offset = previousProgress === null
-        ? (row.sparse ? row.travel / 2 : 0)
+        ? (row.sparse ? row.cycle * (row === rows[0] ? 0.10 : 0.60) : 0)
         : previousProgress * row.cycle;
       applyPosition(row);
     });
