@@ -163,7 +163,7 @@
     });
   }
 
-  function updateAttribution(live = false) {
+  function updateAttribution(live = false, placeAttributions = []) {
     const note = document.querySelector('.reviews-attribution');
     if (!note) return;
     note.replaceChildren();
@@ -184,6 +184,16 @@
     link.rel = 'noopener noreferrer';
     link.textContent = 'Ver todas en Google Maps';
     note.append(link);
+
+    if (live && Array.isArray(placeAttributions)) {
+      placeAttributions.forEach(attribution => {
+        if (typeof attribution === 'string' && attribution.trim()) {
+          const notePart = document.createElement('span');
+          notePart.textContent = ' · ' + attribution;
+          note.append(notePart);
+        }
+      });
+    }
   }
 
   function easeInOut(t) {
@@ -259,20 +269,84 @@
     }, { passive: true });
   }
 
+  // Google Maps JS: reutiliza la biblioteca si ya existe; si no, la carga
+  // con el callback oficial. Esta vía también funciona cuando importLibrary
+  // no está disponible, que era el error reportado en Vercel.
+  function loadGooglePlaces(apiKey) {
+    const maps = window.google?.maps;
+    if (typeof maps?.places?.Place === 'function') {
+      return Promise.resolve(maps.places.Place);
+    }
+    if (typeof maps?.importLibrary === 'function') {
+      return maps.importLibrary('places').then(library => {
+        const Place = library?.Place || window.google?.maps?.places?.Place;
+        if (typeof Place !== 'function') {
+          throw new Error('Google Places cargó, pero no expuso la clase Place.');
+        }
+        return Place;
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      const callbackName = '__makiGooglePlacesReady';
+      let completed = false;
+      const timeout = window.setTimeout(() => {
+        finish(new Error('Google Maps no respondió a tiempo (15 segundos).'));
+      }, 15000);
+
+      function finish(error, Place) {
+        if (completed) return;
+        completed = true;
+        window.clearTimeout(timeout);
+        delete window[callbackName];
+        if (error) reject(error);
+        else resolve(Place);
+      }
+
+      window[callbackName] = async () => {
+        try {
+          // El script fue cargado con libraries=places: Place está disponible
+          // directamente en google.maps.places, sin llamar a importLibrary.
+          let Place = window.google?.maps?.places?.Place;
+          if (typeof Place !== 'function' &&
+              typeof window.google?.maps?.importLibrary === 'function') {
+            const library = await window.google.maps.importLibrary('places');
+            Place = library?.Place;
+          }
+          if (typeof Place !== 'function') {
+            throw new Error('La biblioteca Places no proporcionó la clase Place. Comprueba que Places API (New) esté habilitada.');
+          }
+          finish(null, Place);
+        } catch (error) {
+          finish(error);
+        }
+      };
+
+      const tag = document.createElement('script');
+      const params = new URLSearchParams({
+        key: apiKey,
+        v: 'weekly',
+        libraries: 'places',
+        loading: 'async',
+        language: 'es',
+        callback: callbackName
+      });
+      tag.src = 'https://maps.googleapis.com/maps/api/js?' + params.toString();
+      tag.async = true;
+      tag.onerror = () => finish(new Error('No se pudo cargar Google Maps. Comprueba la clave, el dominio autorizado y la facturación.'));
+      document.head.append(tag);
+    });
+  }
+
   async function loadLiveReviews() {
     const config = window.MAKI_GOOGLE_CONFIG || {};
     const apiKey = safe(config.apiKey);
     const placeId = safe(config.placeId);
     if (!apiKey || !placeId) return; // La web funciona sin Google Cloud.
     try {
-      await new Promise((resolve, reject) => {
-        const tag = document.createElement('script');
-        tag.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(apiKey) + '&v=weekly&loading=async&libraries=places&language=es';
-        tag.onload = resolve;
-        tag.onerror = () => reject(Error('No se pudo cargar Google Maps'));
-        document.head.append(tag);
-      });
-      const { Place } = await google.maps.importLibrary('places');
+      // Carga directa de Maps con callback, no con el evento "load" del script.
+      // "loading=async" no garantiza que importLibrary exista al dispararse onload.
+      const Place = await loadGooglePlaces(apiKey);
       const place = new Place({ id: placeId });
       await place.fetchFields({ fields: ['displayName', 'reviews', 'rating', 'userRatingCount'] });
       const realReviews = (place.reviews || [])
@@ -287,7 +361,7 @@
         }));
       if (realReviews.length >= 2) {
         renderRows(realReviews);
-        updateAttribution(true);
+        updateAttribution(true, place.attributions);
       }
     } catch (error) {
       console.warn('Reseñas Google: se conserva la muestra documentada.', error);
