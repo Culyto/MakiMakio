@@ -249,13 +249,13 @@
     }
     note.replaceChildren();
     if (state === 'loaded') {
-      note.append('Reseñas obtenidas directamente de Google Maps (3, 4 y 5 estrellas). Google Places facilita hasta cinco reseñas por consulta. ');
+      note.append('Reseñas obtenidas directamente de Google Maps');
     } else if (state === 'empty') {
-      note.append('Google Maps no devolvió reseñas de 3, 4 o 5 estrellas para mostrar en este momento. ');
+      note.append('');
     } else if (state === 'error') {
       note.append('No se pudieron cargar las reseñas de Google Maps en este momento. ');
     } else if (state === 'not-configured') {
-      note.append('Las reseñas de Google Maps aparecerán cuando configures la API Key del sitio. ');
+      note.append('');
     } else {
       note.append('Cargando reseñas de Google Maps… ');
     }
