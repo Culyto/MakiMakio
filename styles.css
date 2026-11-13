@@ -619,9 +619,11 @@ a .ui-icon{pointer-events:none}
 }
 
 
-/* v22 — distribución adaptativa según reseñas REALES de Google.
-   Con menos de seis no se fuerzan dos filas con huecos enormes. */
+/* v23 — dos filas siempre que haya dos o más opiniones reales de Google.
+   Con pocas opiniones, recorrido corto y centrado para no generar huecos. */
 .reviews-one-row .reviews-row--fast{display:none!important}
+.reviews-two-rows .reviews-row--fast{display:block!important}
+.reviews-two-rows .reviews-row--slow{display:block!important}
 .reviews-one-row .reviews-row--slow{margin-top:0}
 .reviews-one-row .reviews-marquee{min-height:225px}
 .reviews-one-row .reviews-row--slow .review-card{min-height:212px}
@@ -629,3 +631,7 @@ a .ui-icon{pointer-events:none}
   .reviews-one-row .reviews-marquee{min-height:215px}
   .reviews-one-row .reviews-row--slow .review-card{min-height:205px}
 }
+
+/* La distribución 2+1 ocupa ambas alturas del carrusel sin duplicar opiniones. */
+.reviews-two-rows .reviews-marquee{min-height:450px}
+@media(max-width:560px){.reviews-two-rows .reviews-marquee{min-height:425px}}

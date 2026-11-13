@@ -144,20 +144,14 @@
       Number.isFinite(review.rating) && review.rating >= 4 && review.rating <= 5
     );
 
-    // Google Places normalmente proporciona hasta cinco reseñas por petición.
-    // Repartir dos o tres opiniones en dos filas crea huecos enormes y da la
-    // impresión de que el carrusel no funciona. Con menos de seis opiniones
-    // usamos UNA fila continua, sin duplicados visibles. Si algún día una API
-    // autorizada entrega seis o más, volvemos automáticamente a las dos filas.
-    const enoughForTwoRows = filtered.length >= 6;
-    section.classList.toggle('reviews-one-row', !enoughForTwoRows);
-    section.classList.toggle('reviews-two-rows', enoughForTwoRows);
+    // Mantener SIEMPRE dos filas cuando hay al menos dos reseñas válidas.
+    // Google Places entrega hasta cinco opiniones: con tres, se reparten 2 + 1.
+    // Ninguna opinión se inserta en ambas filas.
     const groups = [[], []];
-    if (enoughForTwoRows) {
-      filtered.forEach((review, index) => groups[index % 2].push(review));
-    } else {
-      groups[0] = filtered;
-    }
+    filtered.forEach((review, index) => groups[index % 2].push(review));
+    const twoRows = filtered.length >= 2;
+    section.classList.toggle('reviews-one-row', !twoRows);
+    section.classList.toggle('reviews-two-rows', twoRows);
 
     rows.forEach((row, index) => {
       const fragment = document.createDocumentFragment();
@@ -216,8 +210,11 @@
       // total disponible. La copia técnica NO se muestra en este caso.
       row.sparse = row.width < viewport + 8;
       row.lane.classList.toggle('reviews-row--sparse', row.sparse);
-      row.travel = row.sparse ? Math.max(0, viewport - row.width - 2 * inset) : 0;
-      row.inset = inset;
+      // Con solo 1-2 tarjetas, un vaivén corto centrado mantiene ambas filas
+      // visibles y en movimiento, sin estirarlas ni hacerlas desaparecer.
+      const available = Math.max(0, viewport - row.width - 2 * inset);
+      row.travel = row.sparse ? Math.min(available, 140, viewport * 0.12) : 0;
+      row.inset = row.sparse ? Math.max(0, (viewport - row.width - row.travel) / 2) : inset;
       row.cycle = row.sparse ? 2 * row.travel : row.width;
       row.offset = previousProgress === null
         ? (row.sparse ? row.travel / 2 : 0)
