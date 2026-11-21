@@ -46,7 +46,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--coral);outline-offs
 
 /* Hero */
 .hero{min-height:max(725px,100svh);padding-top:83px;background:var(--ink);color:white;display:grid;grid-template-columns:53% 47%;overflow:hidden}
-.hero-copy{padding:clamp(40px,4vw,78px) clamp(30px,5vw,110px) clamp(90px,11vw,210px) clamp(30px,6vw,130px);display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2}
+.hero-copy{padding:clamp(40px,4vw,78px) clamp(30px,5vw,110px) clamp(30px,3vw,56px) clamp(30px,6vw,130px);display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2}
 .hero .eyebrow{color:#aaa;white-space:nowrap}
 .little-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--coral);margin-right:8px;vertical-align:middle}
 .hero-headline-wrap{position:relative;margin:30px 0 28px}

@@ -40,6 +40,37 @@
 
   // Intersection observer: brand-appropriate gentle reveals with motion preferences respected.
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Encuadre de "Quiénes somos": alinear el contenido (no el inicio vacío
+  // de la sección) debajo de la cabecera fija, también en pantallas pequeñas.
+  const storySection = document.getElementById('nosotros');
+  const storyKicker = storySection?.querySelector('.section-kicker');
+  if (storyKicker) {
+    const alignStory = () => {
+      const headerHeight = header.getBoundingClientRect().height;
+      const breathingRoom = window.innerWidth <= 820 ? 60 : (window.innerHeight < 800 ? 45 : 65);
+      const top = window.scrollY + storyKicker.getBoundingClientRect().top - headerHeight - breathingRoom;
+      window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'instant' : 'smooth' });
+    };
+
+    // Incluye menú principal, menú móvil, hero, intro y pie de página.
+    document.querySelectorAll('a[href="#nosotros"]').forEach(link => {
+      link.addEventListener('click', event => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+        event.preventDefault();
+        if (window.location.hash !== '#nosotros') history.pushState(null, '', '#nosotros');
+        alignStory();
+      });
+    });
+
+    // Respetar también la navegación atrás/adelante y los enlaces compartidos.
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash === '#nosotros') alignStory();
+    });
+    if (window.location.hash === '#nosotros') {
+      window.addEventListener('load', () => requestAnimationFrame(alignStory), { once: true });
+    }
+  }
   const reveals = document.querySelectorAll('.reveal');
   if (reduceMotion || !('IntersectionObserver' in window)) {
     reveals.forEach(el => el.classList.add('is-visible'));
